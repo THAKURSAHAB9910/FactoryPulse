@@ -1,0 +1,1 @@
+"""FactoryPulse Backend Application"""
