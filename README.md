@@ -1,6 +1,6 @@
 # FactoryPulse — Manufacturing OEE and Downtime Intelligence Platform
 
-[![Vercel Deployment](https://img.shields.io/badge/Vercel-Live_Production-black?style=flat&logo=vercel)](https://factorypulse-three.vercel.app)
+[![Live Production Console](https://img.shields.io/badge/Live%20Demo-factorypulse.vercel.app-22c55e?style=for-the-badge&logo=vercel&logoColor=white)](https://factorypulse.vercel.app)
 [![CI Pipeline](https://github.com/THAKURSAHAB9910/FactoryPulse/actions/workflows/ci.yml/badge.svg)](https://github.com/THAKURSAHAB9910/FactoryPulse)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-blue.svg?logo=postgresql)](https://www.postgresql.org/)
 [![Apache Superset](https://img.shields.io/badge/Apache_Superset-3.1-orange.svg?logo=apache-superset)](https://superset.apache.org/)
@@ -8,7 +8,7 @@
 [![React](https://img.shields.io/badge/React-18_TypeScript-61DAFB.svg?logo=react)](https://reactjs.org/)
 [![Docker Compose](https://img.shields.io/badge/Docker_Compose-Multi--Container-2496ED.svg?logo=docker)](https://www.docker.com/)
 
-**Live Production Console**: 🌐 **[https://factorypulse-three.vercel.app](https://factorypulse-three.vercel.app)**
+> 🚀 **Live Production Deployment**: **[https://factorypulse.vercel.app](https://factorypulse.vercel.app)**
 
 **FactoryPulse** is a production-grade, full-stack Decision Intelligence (DI) and Manufacturing Execution platform. It streams high-frequency IoT telemetry, validates and loads over **500,000 realistic manufacturing events** into a range-partitioned PostgreSQL star schema, executes advanced analytical SQL calculations (OEE, MTBF, MTTR, 80/20 Pareto, rolling window averages), surfaces real-time telemetry and incident state transitions via WebSockets in a modern React + TypeScript console, and provides 5 pre-configured Apache Superset 3.0 business intelligence dashboards.
 
