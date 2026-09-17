@@ -1,0 +1,107 @@
+services:
+  # 1. PostgreSQL Relational Star Schema & Operational DB
+  postgres:
+    image: postgres:16-alpine
+    container_name: factorypulse-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-factorypulse}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+      - ./data_engine/sql/01_init_schema.sql:/docker-entrypoint-initdb.d/01_init_schema.sql
+      - ./data_engine/sql/02_create_dimensions.sql:/docker-entrypoint-initdb.d/02_create_dimensions.sql
+      - ./data_engine/sql/03_create_facts_partitioned.sql:/docker-entrypoint-initdb.d/03_create_facts_partitioned.sql
+      - ./data_engine/sql/04_create_indexes_views.sql:/docker-entrypoint-initdb.d/04_create_indexes_views.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-factorypulse}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # 2. Manufacturing Data Simulator & ETL Pipeline Service
+  data-engine:
+    build:
+      context: .
+      dockerfile: data_engine/Dockerfile
+    container_name: factorypulse-data-engine
+    restart: on-failure
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-factorypulse}
+      SIMULATOR_TARGET_EVENTS: ${SIMULATOR_TARGET_EVENTS:-500000}
+    command: ["python", "-m", "data_engine.etl.run_pipeline"]
+
+  # 3. FastAPI REST & WebSocket Backend
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: factorypulse-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-factorypulse}
+      SECRET_KEY: ${SECRET_KEY:-factorypulse_super_secret_jwt_key_manufacturing_intelligence_2026}
+      API_V1_PREFIX: /api/v1
+      ACCESS_TOKEN_EXPIRE_MINUTES: 480
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # 4. React + TypeScript Incident Console Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: factorypulse-frontend
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "3000:80"
+
+  # 5. Apache Superset 3.0 Analytics & BI Platform
+  superset:
+    build:
+      context: ./superset
+      dockerfile: Dockerfile
+    container_name: factorypulse-superset
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "${SUPERSET_PORT:-8088}:8088"
+    environment:
+      SUPERSET_SECRET_KEY: ${SUPERSET_SECRET_KEY:-superset_secret_key_factorypulse_production_secure_2026}
+      SUPERSET_DATABASE_URI: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-factorypulse}
+      WAREHOUSE_DATABASE_URI: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-factorypulse}
+      SUPERSET_ADMIN_USERNAME: ${SUPERSET_ADMIN_USERNAME:-admin}
+      SUPERSET_ADMIN_PASSWORD: ${SUPERSET_ADMIN_PASSWORD:-admin}
+      SUPERSET_ADMIN_EMAIL: ${SUPERSET_ADMIN_EMAIL:-admin@factorypulse.io}
+    volumes:
+      - superset_home:/app/superset_home
+    command: >
+      bash -c "
+        /app/superset_init/init_superset.sh &&
+        /usr/bin/run-server.sh
+      "
+
+volumes:
+  pg_data:
+    name: factorypulse_pg_data
+  superset_home:
+    name: factorypulse_superset_home
