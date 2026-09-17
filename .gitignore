@@ -46,3 +46,8 @@ frontend/dist-ssr/
 # Docker / DB volumes
 pg_data/
 superset_home/
+
+# Vercel
+.vercel
+*.vercel
+
